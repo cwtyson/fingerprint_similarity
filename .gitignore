@@ -4,9 +4,9 @@
 .Ruserdata
 
 ## Large files
-./data/fingerprint_similarity/calibration/cp_sim_parallel_all_metrics.RDS
-./data/fingerprint_similarity/calibration/similarity_scores.RDS
-./data/fingerprint_similarity/calibration/similarity_scores.RDS
+/data/fingerprint_similarity/calibration/cp_sim_parallel_all_metrics.RDS
+/data/fingerprint_similarity/calibration/similarity_scores.RDS
+/data/fingerprint_similarity/calibration/similarity_scores.RDS
 
 ## Manuscript file
-./ms/
+/ms/
