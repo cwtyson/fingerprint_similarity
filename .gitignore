@@ -3,10 +3,7 @@
 .RData
 .Ruserdata
 
-## Large files
-/data/fingerprint_similarity/calibration/
-/data/fingerprint_similarity/similarity_estimates/
-
-
-## Manuscript file
+## Manuscript files
 /ms/
+
+Icon*
