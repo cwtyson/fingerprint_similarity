@@ -155,9 +155,7 @@ ggplot(aes(x=as.factor(point_type),
              scales="free")  +
   ggplot2::scale_fill_manual(values = wesanderson::wes_palette("Zissou1", n_distinct(sim_ref$vec_type), 
                                                                type = "continuous")) +
-  theme_minimal()
-
-# ggsave("./plots/sim_score_boxplots.JPG",scale = 2)
+  theme_minimal()# ggsave("./plots/sim_score_boxplots.JPG",scale = 2)
 
 ## Prepare data
 diff_df <- sim_ref %>% 
@@ -216,21 +214,21 @@ sim_mods <- sim_nested %>%
                          data = data))) %>% 
   summarise(rsq = summary(model)$r.squared) %>% 
   arrange(desc(rsq))
-  
-  reframe(broom::tidy(model)) %>% 
-  filter(term == "value_s") %>% 
-  arrange(desc(estimate))
+
 
 ## Show top 9 metrics
 top_metrics <- sim_mods %>% 
+  ungroup() %>% 
   slice(1:9)
+
+sim_ref_f <- sim_ref %>% 
+  filter(group %in% top_metrics$group) %>% 
+  mutate(group_name = paste(name, vec_type))
 
 ## Plot top metrics
 ggplot(aes(y=dist,
            x=value_s),
-       data = sim_ref %>% 
-         filter(group %in% top_metrics$group) %>% 
-         mutate(group_name = paste(name, vec_type))) +
+       data = sim_ref_f) +
   
   geom_jitter(alpha=0.2) +
   stat_smooth(se = FALSE,

@@ -26,40 +26,40 @@ alpha = 24
 ## Minimum rssi
 min_rssi = -117
 
-## Calibration point data #######
-cp_data <- readRDS("/Users/tyson/Documents/git/zebby_tracking_field/data/2024/walking_validation/dets_rounds1-2.RDS")
-
-## Pivot wider
-cpw <- cp_data %>% 
-  
-  filter(!is.na(point)) %>% 
-  
-  ## 30 second fingerprint
-  mutate(date_time_r = floor_date(date_time,unit="30 seconds")) %>% 
-  group_by(point,place,type,tag,date_time_r,gp) %>% 
-  summarise(mean_rssi = mean(rssi)) %>% 
-  pivot_wider(names_from=gp,
-              values_from=mean_rssi,
-              names_prefix = "gp_") %>% 
-  
-  ## Create interval
-  group_by(date_time_r) %>% 
-  mutate(int = cur_group_id()) %>%
-  
-  ## Create interval
-  group_by(tag) %>% 
-  mutate(ind_id = cur_group_id()) %>% 
-  ungroup() %>%
-  mutate(row = 1:n()) %>% 
-  select(row,point,int,ind_id,everything()) %>% 
-  slice_sample(prop=1)
-
-saveRDS(cpw, "./data/fingerprint_similarity/calibration/calibration_data_wide.RDS")
+# ## Calibration point data #######
+# cp_data <- readRDS("/Users/tyson/Documents/git/zebby_tracking_field/data/2024/walking_validation/dets_rounds1-2.RDS")
 # 
-# ## Read in what's been done and remove from combos
-# sim_df_done <- readRDS("./data/fingerprint_similarity/calibration/calibration_sim.RDS")
+# ## Pivot wider
+# cpw <- cp_data %>% 
+#   
+#   filter(!is.na(point)) %>% 
+#   
+#   ## 30 second fingerprint
+#   mutate(date_time_r = floor_date(date_time,unit="30 seconds")) %>% 
+#   group_by(point,place,type,tag,date_time_r,gp) %>% 
+#   summarise(mean_rssi = mean(rssi)) %>% 
+#   pivot_wider(names_from=gp,
+#               values_from=mean_rssi,
+#               names_prefix = "gp_") %>% 
+#   
+#   ## Create interval
+#   group_by(date_time_r) %>% 
+#   mutate(int = cur_group_id()) %>%
+#   
+#   ## Create interval
+#   group_by(tag) %>% 
+#   mutate(ind_id = cur_group_id()) %>% 
+#   ungroup() %>%
+#   mutate(row = 1:n()) %>% 
+#   select(row,point,int,ind_id,everything()) %>% 
+#   slice_sample(prop=1)
+# 
+# saveRDS(cpw, "./data/fingerprint_similarity/calibration/calibration_data_wide.RDS")
 
-## Get overlap for each
+ ## Read in fingerprint data
+cpw <- readRDS("./data/fingerprint_similarity/calibration/calibration_data_wide.RDS")
+
+## Get pairwise combinations for each fingerprint
 combos <- expand.grid(x = unique(cpw$row),
                       y =unique(cpw$row)) %>% 
   filter(x != y) %>% 
@@ -72,7 +72,7 @@ combos <- expand.grid(x = unique(cpw$row),
          y) 
 
 
-## Similarity and distance measures
+## Similarity and distance measures - 
 sim_measures = c("angular","Braun-Blanquet","Chi-squared","correlation","cosine","Cramer",
                  "Dice","eDice","eJaccard","Fager","Hamman","Jaccard",
                  "Kulczynski1","Kulczynski2","Michael","Mountford","Mozley","Ochiai",
@@ -83,9 +83,8 @@ dist_measures = c("Bhjattacharyya","Bray","Canberra","Chord","divergence","Eucli
                   "Geodesic","Hellinger","Kullback","Manhattan",
                   "Podani","Soergel","supremum","Wave","Whittaker")
 
+## Combine
 measures <- sort(c(sim_measures,dist_measures))
-
-
 
 ## Fitting function #######
 fitting_function <- function(row_i)
@@ -195,6 +194,8 @@ fitting_function <- function(row_i)
       measures_rep <- rep(measures, 
                           length(vec_list_mat))
       
+      
+      ## Calculate scores
       scores_df <- map2(.x = vec_list_mat_rep,
                         .y = measures_rep,
                         .f = function(x,y) suppressWarnings(dist(x,
