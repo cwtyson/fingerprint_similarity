@@ -3,7 +3,7 @@ library(tidyverse)
 library(janitor)
 
 ## Read in similarity values and process ####### 
-sim_df <- readRDS("./data/fingerprint_similarity/calibration/cp_sim_parallel_all_metrics_node_filter.RDS")
+sim_df <- readRDS("./data/fingerprint_similarity/calibration/lf/cp_sim_parallel_all_metrics_node_filter.RDS")
 
 ## Pivot longer
 sim_l <- sim_df %>% 
@@ -105,11 +105,11 @@ sim_ref <- sim_df_j %>%
 
 
 ## Save
-saveRDS(sim_ref, "./data/fingerprint_similarity/calibration/similarity_scores.RDS")
+saveRDS(sim_ref, "./data/fingerprint_similarity/lf/calibration/similarity_scores.RDS")
 
 
 ## Read in similarity values and visualize #######
-sim_ref <- readRDS("./data/fingerprint_similarity/calibration/similarity_scores.RDS")
+sim_ref <- readRDS("./data/fingerprint_similarity/lf/calibration/similarity_scores.RDS")
 
 ## Compare node X filters
 

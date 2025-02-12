@@ -251,4 +251,4 @@ cp_sim <- foreach(row_i=1:nrow(combos),
 alld <- do.call(rbind, cp_sim) %>% 
   dplyr::select(row,ind,partner,row_ind,row_partner,num_gp,everything())
 
-saveRDS(alld, "./data/fingerprint_similarity/calibration/cp_sim_parallel_all_metrics_node_filter.RDS")
+saveRDS(alld, "./data/fingerprint_similarity/calibration/lf/cp_sim_parallel_all_metrics_node_filter.RDS")

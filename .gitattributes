@@ -1,0 +1,7 @@
+data/fingerprint_similarity/calibration/lf/ filter=lfs diff=lfs merge=lfs -text
+/data/fingerprint_similarity/
+git[[:space:]]lfs[[:space:]]migrate[[:space:]]import[[:space:]]--include=/data/fingerprint_similarity/calibration/calibration_data_wide.RDS filter=lfs diff=lfs merge=lfs -text
+git[[:space:]]lfs[[:space:]]migrate[[:space:]]import[[:space:]]--include=/data/fingerprint_similarity/calibration/lf/cp_similarity_parallel_all_metrics_node_filter.RDS filter=lfs diff=lfs merge=lfs -text
+git[[:space:]]lfs[[:space:]]migrate[[:space:]]import[[:space:]]--include=/data/fingerprint_similarity/calibration/lf/similarity_scores.RDS filter=lfs diff=lfs merge=lfs -text
+/data/fingerprint_similarity/
+git[[:space:]]lfs[[:space:]]migrate[[:space:]]import[[:space:]]--include=/data/fingerprint_similarity/calibration/lf/similarity_scores.RDS filter=lfs diff=lfs merge=lfs -text
