@@ -1,3 +1,4 @@
+
 ## Split fingerprint files
 
 ## Tag checks 
@@ -6,7 +7,7 @@
 library(tidyverse)
 
 ## Process detections
-dets <- readRDS("./data/2024/fingerprint_sim/dets_wide.RDS")
+dets <- readRDS("./data/fingerprint_dets_wide.RDS")
 
 ## Summarize detections
 dets_int_sum <- dets %>% 
@@ -26,4 +27,4 @@ dl <- split(dets_int_sum_f_daily, dets_int_sum_f_daily$day)
 names(dl) = lapply(dl, function(x) as.character(unique(x$day)))
 
 ## Save as separte file
-purrr::iwalk(dl, function(dat, name) saveRDS(dat, file = paste0("./data/2024/fingerprint_sim/days/", name, ".RDS")))
+purrr::iwalk(dl, function(dat, name) saveRDS(dat, file = paste0("./data/fingerprint_similarity/days/", name, ".RDS")))

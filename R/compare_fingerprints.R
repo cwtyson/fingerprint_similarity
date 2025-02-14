@@ -1,11 +1,12 @@
 ## Combine and assess similarity
 library(tidyverse)
 
+## Tag path
 newest_tag_path = "~/Library/CloudStorage/GoogleDrive-cwtyson@gmail.com/My Drive/Zebby_tracking_field_data/tags/zebby_tag_log_20250102.xlsx"
 
-files <- list.files("./data/fingerprint_similarity/similarity_estimates/",full.names = T)
+files <- list.files("./data/fingerprint_similarity/similarity_estimates/", full.names = T)
 
-
+## Combine
 sim_df <- lapply(files,readRDS) %>% 
   do.call(rbind,.)
 
@@ -53,10 +54,6 @@ sim_df_j <- sim_df %>%
                                 TRUE ~ "Adult + Juv"))
 
 
-ggplot(sim_df_j) +
-  geom_violin(aes(x=same_group,
-                   y=score)) 
-
 
 ## Summarise scores
 sim_sum <- sim_df_j %>% 
@@ -64,16 +61,16 @@ sim_sum <- sim_df_j %>%
            section,
            group_type,
            ind_section) %>% 
-  summarise(mean_sim = mean(score))
+  summarise(mean_sim = mean(score,na.rm = T))
 
-
+## Summarise by group
 ggplot(sim_sum) +
   
   geom_boxplot(aes(x=same_group,
                    y=mean_sim)) +
   geom_jitter(aes(x=same_group,
                   y=mean_sim)) +
-  facet_grid(section~group_type) +
+  facet_grid(.~group_type) +
   theme_minimal()
 
 

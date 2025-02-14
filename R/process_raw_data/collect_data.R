@@ -193,7 +193,8 @@ dets_int_sum <- dets_int %>%
            date_time_r,
            bird_band) %>% 
   pivot_wider(names_from=grid_point,
-              values_from=mean_rssi) %>% 
+              values_from=mean_rssi,
+              names_prefix = "gp_") %>% 
   group_by(bird_band) %>% 
   mutate(ind_id = cur_group_id()) %>% 
   select(int,
@@ -206,3 +207,5 @@ dets_int_sum <- dets_int_sum %>%
   arrange(int)
 
 saveRDS(dets_int_sum, "./data/fingerprint_dets_wide.RDS")
+
+

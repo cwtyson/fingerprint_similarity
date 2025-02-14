@@ -56,7 +56,7 @@ min_rssi = -117
 # 
 # saveRDS(cpw, "./data/fingerprint_similarity/calibration/calibration_data_wide.RDS")
 
- ## Read in fingerprint data
+## Read in fingerprint data
 cpw <- readRDS("./data/fingerprint_similarity/calibration/calibration_data_wide.RDS")
 
 ## Get pairwise combinations for each fingerprint
@@ -100,35 +100,39 @@ fitting_function <- function(row_i)
     select(where(~!all(is.na(.)))) %>% 
     ungroup()
   
-  ## Calculate similarity if at least 3 grid points detecting
+  ## Number of grid points
   num_gp <- ncol(int_sub_inds)-8
   
-  if(num_gp >= 3){
-    
-    
-    ## Replace NA with minimum value
-    vec_NA_repl <- int_sub_inds %>% 
-      mutate(across(starts_with("gp_"), ~case_when(is.na(.x) ~ -120,
-                                                   TRUE ~ .x)))  
+  ## Calculate similarity if at least 1 node
+  if(num_gp >= 1){
     
     ## Remove NAs
-    vec_NA_remove<- int_sub_inds %>% 
-      select(where(~!any(is.na(.)))) 
+    linear_NA_remove<- int_sub_inds %>% 
+      select(where(~!any(is.na(.))))
     
-    # ## Value below threshold removed
-    # vec_threshold_remove<- vec_NA_repl %>%
-    # 
-    #   ## Using NA replace vector, setting values below treshold to NA, removing
-    #   mutate(across(starts_with("gp_"), ~case_when(.x < -90 ~ NA,
-    #                                                TRUE ~ .x))) %>%
-    #   select(where(~!any(is.na(.))))
-    # 
-    # if(ncol(vec_threshold_remove) <= 8){
-    #   rm(vec_threshold_remove)
-    # }
+    ## Replace NA with minimum value
+    linear_NA_replace <- int_sub_inds %>% 
+      mutate(across(starts_with("gp_"), ~case_when(is.na(.x) ~ -120,
+                                                   TRUE ~ .x)))
     
-    ## Create exponential representaiton of full vector
-    vec_exp <- int_sub_inds %>% 
+    ## Remove NAS, then create exponential representation 
+    exp_NA_remove <- int_sub_inds %>% 
+      
+      select(where(~!any(is.na(.)))) %>% 
+      
+      ## Change to positive representation
+      mutate(across(starts_with("gp_"), ~case_when(!is.na(.x) ~ (.x - -117),
+                                                   TRUE ~ 0))) %>% 
+      
+      ## Change to exponeitial representation
+      mutate(across(starts_with("gp_"), ~(exp(.x/24))/(exp(--117/24))))
+    
+    ## Replace NAs, then create exponential representation
+    exp_NA_replace <- int_sub_inds %>% 
+      
+      ## Replace NAs  
+      mutate(across(starts_with("gp_"), ~case_when(is.na(.x) ~ -120,
+                                                   TRUE ~ .x))) %>% 
       
       ## Change to positive representation
       mutate(across(starts_with("gp_"), ~case_when(!is.na(.x) ~ (.x - -117),
@@ -139,13 +143,14 @@ fitting_function <- function(row_i)
     
     
     ## Get max number of nodes to use given number of columns in vec_NA_repl
-    nodes <- ncol(vec_NA_repl)-8
+    nodes <- ncol(exp_NA_remove)-8
     
+    ## List for vectors
     vec_exp_n_list <- list()
     for(nn in 1:nodes){
       
-      ## Create exponential representaiton of full vector with only top 5 nodes
-      vec_exp_n_list[[nn]] <- vec_exp %>% 
+      ## Create exponential representation of full vector with only top X nodes
+      vec_exp_n_list[[nn]] <- exp_NA_remove %>% 
         group_by(row) %>% 
         pivot_longer(starts_with("gp_")) %>% 
         arrange(desc(value)) %>% 
@@ -157,22 +162,20 @@ fitting_function <- function(row_i)
         select(-gp_rank) %>% 
         ungroup() %>% 
         pivot_wider(names_from = name) 
-     
+      
     }
     
     vec_exp_n_list_names <- paste0("vec_list_exp_n_", 1:nodes)
     
     ## Minimum vector length will be vec_NA_remove, if at least 1 column:
-    if((ncol(vec_NA_remove)-8)>=1){
-      
-      cat(row_i,"\n")
+    if((ncol(linear_NA_remove)-8)>=1){
       
       ## List of vectors
-      vec_list <- c(list(vec_NA_repl,
-                       vec_NA_remove,
-                       # vec_threshold_remove,
-                       vec_exp),
-                       vec_exp_n_list)
+      vec_list <- c(list(linear_NA_remove,
+                         linear_NA_replace,
+                         exp_NA_replace,
+                         exp_NA_remove),
+                    vec_exp_n_list)
       
       ## Matrices
       vec_list_mat <- lapply(vec_list,
@@ -198,15 +201,16 @@ fitting_function <- function(row_i)
       ## Calculate scores
       scores_df <- map2(.x = vec_list_mat_rep,
                         .y = measures_rep,
-                        .f = function(x,y) suppressWarnings(dist(x,
-                                                                 method = y))) %>% 
+                        .f = function(x,y) suppressWarnings(proxy::dist(x,
+                                                                        method = y))) %>% 
         unlist() %>% 
         matrix(nrow = length(vec_list),
                byrow = T) %>% 
         data.frame() %>% 
-        mutate(vec_type = c("NA_replace",
-                            "NA_remove",
-                            "Exp_rep",
+        mutate(vec_type = c("linear_NA_remove",
+                            "linear_NA_replace",
+                            "exp_NA_replace",
+                            "exp_NA_remove",
                             vec_exp_n_list_names),
                num_gp = num_gp)
       names(scores_df) <- c(measures, "vec_type","num_gp")
@@ -228,17 +232,10 @@ fitting_function <- function(row_i)
           everything()
         )
       
-    } else(
-      
-      cat("Not enough nodes after filtering ")
-    )
+    } 
     
-  } else{
-    
-    cat("Not enough nodes detectedn")
-    
-  }
-  
+  } 
+
 }
 
 ## For each
