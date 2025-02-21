@@ -9,13 +9,10 @@ library(foreach)
 library(proxy)
 
 cores = parallel::detectCores()
-cl <- parallel::makeForkCluster(cores-1, outfile = "")
+cl <- parallel::makeForkCluster(cores-3, outfile = "")
 doParallel::registerDoParallel(cl)
 
 ## Hardcoded values
-
-## RSSI value to replace NA values
-na_rssi = -120
 
 ## RSSI cutoff to turn into NA
 rssi_cutoff = -90
@@ -69,7 +66,9 @@ combos <- expand.grid(x = unique(cpw$row),
   arrange(x,
           y) %>% 
   select(x,
-         y) 
+         y) %>% 
+  ungroup() %>% 
+  mutate(row = 1:n())
 
 
 ## Similarity and distance measures - 
@@ -92,12 +91,16 @@ fitting_function <- function(row_i)
   
   sim_df_output <- list()
   
+  # row_i = 52312
+  
+  cat(row_i,'\n')
+  
   rows <- c(combos[row_i,]$x,combos[row_i,]$y)
   
-  ## Keep only matching
+  ## Keep fingerprints where at least one value is not NA
   int_sub_inds <- cpw %>% 
     filter(row %in% rows) %>% 
-    select(where(~!all(is.na(.)))) %>% 
+    select(where(~!any(is.na(.)))) %>% 
     ungroup()
   
   ## Number of grid points
@@ -197,8 +200,7 @@ fitting_function <- function(row_i)
       measures_rep <- rep(measures, 
                           length(vec_list_mat))
       
-      
-      ## Calculate scores
+      ## Calculate scores from similarity
       scores_df <- map2(.x = vec_list_mat_rep,
                         .y = measures_rep,
                         .f = function(x,y) suppressWarnings(proxy::dist(x,

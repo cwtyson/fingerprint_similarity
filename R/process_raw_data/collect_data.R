@@ -15,8 +15,6 @@ newest_tag_path = "~/Library/CloudStorage/GoogleDrive-cwtyson@gmail.com/My Drive
 
 ## Compare fingerprints between intervals ##########
 
-newest_tag_path = "~/Library/CloudStorage/GoogleDrive-cwtyson@gmail.com/My Drive/Zebby_tracking_field_data/tags/zebby_tag_log_20250102.xlsx"
-
 ## Tags
 tag_log  <- readxl::read_excel(newest_tag_path) %>% 
   janitor::clean_names() %>% 

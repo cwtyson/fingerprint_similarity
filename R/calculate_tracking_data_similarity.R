@@ -22,10 +22,13 @@ done <- list.files("./data/fingerprint_similarity/similarity_estimates/")
 finger_files_to_do <- list.files("./data/fingerprint_similarity/days/",full.names = T)[!(finger_files %in% done)]
 
 ## Similarity and distance measures - 
-sim_measures = c("Cramer")
+sim_measures = c("Podani")
 
 ## Combine
 measures <- sim_measures 
+
+## Nodes to keep
+n2k = 20
 
 ## Fitting function
 fitting_function <- function(f)
@@ -56,7 +59,7 @@ fitting_function <- function(f)
   ## Day to process
   day = unlist(strsplit(finger_files_to_do[f],"/"))[6]
   
-  cat("Day\n", day)
+  cat("\nDay:", day, "\n")
   
   ## Set progress bar
   pb <- txtProgressBar(min = 0, max = length(unique(dets_int_sum_f$int)), style = 3)
@@ -69,7 +72,6 @@ fitting_function <- function(f)
     ## Progress bar
     Sys.sleep(0.1)
     setTxtProgressBar(pb, which(i == unique(dets_int_sum_f$int)))
-    
     # i = unique(dets_int_sum_f$int)[1]
     
     int_sub <- dets_int_sum_f[dets_int_sum_f$int==i,] 
@@ -87,7 +89,7 @@ fitting_function <- function(f)
     ## For each row
     for(row_i in 1:nrow(combos)){
       
-      # row_i = 3
+      # row_i = 6
       
       ind_ids <- c(combos[row_i,]$x,combos[row_i,]$y)
       
@@ -97,32 +99,47 @@ fitting_function <- function(f)
         select(where(~!any(is.na(.)))) %>% 
         ungroup()
       
-      ## Calculate similarity if at least 3 grid points detecting
+      ## Calculate similarity if at least 2 grid points detecting - 1 gives NA
       num_gp <- ncol(int_sub_inds)-6
       
-      if(num_gp >= 1){
+      if(num_gp >= 2){
         
-        ## Create exponential representaiton of full vector
-        vec_exp <- int_sub_inds %>% 
+        ## Remove NAS, then create exponential representation to get fingerprints to compare
+        f_comp <- int_sub_inds %>% 
+          
+          select(where(~!any(is.na(.)))) %>% 
           
           ## Change to positive representation
           mutate(across(starts_with("gp_"), ~case_when(!is.na(.x) ~ (.x - -117),
                                                        TRUE ~ 0))) %>% 
           
           ## Change to exponeitial representation
-          mutate(across(starts_with("gp_"), ~(exp(.x/24))/(exp(--117/24))))
+          mutate(across(starts_with("gp_"), ~(exp(.x/24))/(exp(--117/24))))  %>% 
+          group_by(bird_band) %>% 
+          pivot_longer(starts_with("gp_")) %>% 
+          arrange(desc(value)) %>% 
+          ungroup() %>% 
+          mutate(gp_rank = 1:n()) %>% 
+          group_by(name) %>% 
+          mutate(gp_rank = min(gp_rank)) %>% 
+          filter(gp_rank <=  n2k) %>% 
+          select(-gp_rank) %>% 
+          ungroup() %>% 
+          pivot_wider(names_from = name) 
         
         
         ## Change to matrix and calculate similarity score
-        mat <- vec_exp%>% 
-          select(-inds,-day,-int,-date_time_r,-bird_band,-ind_id) %>% 
+        mat <- f_comp %>% 
+          select(contains("gp_")) %>% 
           as.matrix()
-        
+
+        ## Similarity measure
         sim <- proxy::dist(mat,
-                           method = "Cramer")
+                           method = sim_measures)
         
         sim_df <- data.frame(int = int_sub_inds$int[1],
                              row = row_i,
+                             nodes = num_gp,
                              score = sim[1],
                              ind = int_sub_inds$bird_band[1],
                              partner = int_sub_inds$bird_band[2],
@@ -133,9 +150,10 @@ fitting_function <- function(f)
         
       } 
     }
-    cat("\nFinished interval\n")
-    
   }
+  
+  cat("\nFinished day:", gsub(".RDS","",day),"\n")
+  
   close(pb)
   
   if(nrow(sim_df_day)>0){
